@@ -29,7 +29,7 @@ function sanitizeInput(text) {
   clean = clean.replace(/[\u200B-\u200F\uFEFF]/g, "");
 
   // 6️⃣ Trim extra spaces
-  return clean.trim();
+  return clean;
 }
 // =============== THEME HANDLER ===============
 // Save the selected theme and apply it across pages
@@ -571,7 +571,22 @@ window.addEventListener("pageshow", () => {
 });
 // 🚫 Live protection: instantly sanitize every text box as the user types
 document.addEventListener("input", (e) => {
-  if (e.target && e.target.tagName === "INPUT" && e.target.type === "text") {
-    e.target.value = sanitizeInput(e.target.value);
+  if (!e.target) return;
+  if (e.target.tagName !== "INPUT") return;
+  if (e.target.type !== "text") return;
+
+  // Don’t sanitize login fields live (handled on submit)
+  if (e.target.id === "authUsername" || e.target.id === "authPassword") return;
+
+  // Do NOT remove spaces. Only remove dangerous characters.
+  const original = e.target.value;
+  const cleaned = original.replace(/[<>]/g, "")
+                          .replace(/script|javascript:/gi, "")
+                          .replace(/https?:\/\/\S+|www\.\S+/gi, "")
+                          .replace(/[\\/]+/g, "")
+                          .replace(/[{}$]/g, "");
+
+  if (cleaned !== original) {
+    e.target.value = cleaned;
   }
 });
