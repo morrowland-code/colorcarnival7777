@@ -289,6 +289,18 @@ main.card {
       }
     }
     loadPalettes();
+    // 🔄 Restore saved palette image on page load
+const savedImg = localStorage.getItem("cc_palette_image");
+if (savedImg) {
+  preview.src = savedImg;
+  preview.style.display = "block";
+
+  preview.onload = () => {
+    canvas.width = preview.naturalWidth;
+    canvas.height = preview.naturalHeight;
+    ctx.drawImage(preview, 0, 0);
+  };
+}
 
     // 💾 Create palette
     createPaletteBtn.addEventListener("click", async () => {
@@ -333,18 +345,30 @@ main.card {
     });
 
     // 🖼 Upload image
-    paletteFile.addEventListener("change",e=>{
-      const f=e.target.files[0];
-      if(!f)return;
-      const url=URL.createObjectURL(f);
-      preview.src=url;
-      preview.style.display="block";
-      preview.onload=()=>{
-        canvas.width=preview.naturalWidth;
-        canvas.height=preview.naturalHeight;
-        ctx.drawImage(preview,0,0);
-      };
-    });
+    // 🖼 Upload + save image permanently
+paletteFile.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const base64 = evt.target.result;
+
+    // 💾 Save image so it survives page changes
+    localStorage.setItem("cc_palette_image", base64);
+
+    preview.src = base64;
+    preview.style.display = "block";
+
+    preview.onload = () => {
+      canvas.width = preview.naturalWidth;
+      canvas.height = preview.naturalHeight;
+      ctx.drawImage(preview, 0, 0);
+    };
+  };
+
+  reader.readAsDataURL(file);
+});
 
     // 👁 Eyedropper
     preview.addEventListener("mousemove",e=>{
