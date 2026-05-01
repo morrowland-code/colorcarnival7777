@@ -6,6 +6,85 @@ const API_BASE = ""; // same-origin for Flask
 // 🧼 Sanitize any text input to prevent code or tags
 // 🧼 Fully safe sanitization — blocks code, URLs, slashes, and weird symbols
 // 🧼 Strong sanitization: remove slashes and unsafe content
+
+const CC_PALETTES_KEY = "cc_local_palettes";
+
+function restoreProgressFromLinkNow() {
+  if (!window.location.hash.startsWith("#progress=")) return;
+
+  try {
+    const code = window.location.hash.replace("#progress=", "");
+    const progress = JSON.parse(decodeURIComponent(escape(atob(code))));
+
+    Object.keys(progress || {}).forEach((key) => {
+      localStorage.setItem(key, progress[key]);
+    });
+
+    alert("Progress restored! 🎉");
+    history.replaceState(null, "", window.location.pathname);
+  } catch {
+    alert("That progress link was invalid 💔");
+  }
+}
+
+restoreProgressFromLinkNow();
+
+
+function getAllLocalProgress() {
+  const data = {};
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    data[key] = localStorage.getItem(key);
+
+  }
+
+  return data;
+}
+
+function restoreAllLocalProgress(data) {
+  Object.keys(data || {}).forEach((key) => {
+    localStorage.setItem(key, data[key]);
+  });
+}
+
+
+function encodeProgress(data) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+}
+
+function decodeProgress(code) {
+  return JSON.parse(decodeURIComponent(escape(atob(code))));
+}
+
+function getProgressData() {
+  return {
+    palettes: JSON.parse(localStorage.getItem(CC_PALETTES_KEY) || "[]"),
+    theme: localStorage.getItem("cc_theme") || "strawberry"
+  };
+}
+
+function restoreProgressData(data) {
+  if (data.palettes) {
+    localStorage.setItem(CC_PALETTES_KEY, JSON.stringify(data.palettes));
+  }
+
+  if (data.theme) {
+    localStorage.setItem("cc_theme", data.theme);
+  }
+}
+
+
+
+
+function getLocalPalettes() {
+  return JSON.parse(localStorage.getItem(CC_PALETTES_KEY) || "[]");
+}
+
+function saveLocalPalettes(palettes) {
+  localStorage.setItem(CC_PALETTES_KEY, JSON.stringify(palettes));
+}
+
 function sanitizeInput(text) {
   if (typeof text !== "string") return "";
 
@@ -107,60 +186,7 @@ async function fetchWithAuth(path, options = {}) {
 // ===================== PALETTE PAGE =====================
 async function initPalettePage() {
   // 🚨 Require login to use palette page
-  const currentUser = localStorage.getItem("cc_logged_user");
-  if (!currentUser) {
-    // Disable all inputs and show warning
-    document.querySelectorAll("button, input, select").forEach(el => {
-      el.disabled = true;
-      el.style.opacity = "0.5";
-      el.style.cursor = "not-allowed";
-    });
-
-    // Create a centered popup overlay
-    const warning = document.createElement("div");
-    warning.style.position = "fixed";
-    warning.style.top = "0";
-    warning.style.left = "0";
-    warning.style.width = "100vw";
-    warning.style.height = "100vh";
-    warning.style.display = "flex";
-    warning.style.justifyContent = "center";
-    warning.style.alignItems = "center";
-    warning.style.background = "rgba(0,0,0,0.5)";
-    warning.style.zIndex = "9999";
-    warning.innerHTML = `
-      <div style="
-        background: white;
-        padding: 30px 40px;
-        border-radius: 20px;
-        text-align: center;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-        font-family: 'Poppins', sans-serif;
-      ">
-        <h2 style="color:#ff4f9a;">🍓 Sign in Required</h2>
-        <p style="margin:10px 0 20px;">You must be signed in to use the Palette page.</p>
-        <button id="goLogin" style="
-          background: linear-gradient(135deg,#ff7bb0,#ffb6e1);
-          border:none;
-          color:white;
-          border-radius:12px;
-          padding:10px 20px;
-          font-weight:600;
-          cursor:pointer;
-          box-shadow: 0 4px 10px rgba(255,120,170,0.4);
-        ">Sign In</button>
-      </div>
-    `;
-    document.body.appendChild(warning);
-
-    // When clicked, open login popup
-    document.getElementById("goLogin").addEventListener("click", () => {
-      warning.remove();
-      document.getElementById("authPopup").style.display = "flex";
-    });
-
-    return; // stop rest of palette code
-  }
+ 
   const paletteSelect = document.getElementById("paletteSelect");
   const paletteInput = document.getElementById("paletteNameInput");
   const createPaletteBtn = document.getElementById("createPaletteBtn");
@@ -170,92 +196,77 @@ async function initPalettePage() {
   if (!paletteSelect) return; // only run on palette.html
 
   // 🎨 Load palettes
-  async function loadPalettes(selectId = null) {
-    try {
-      const res = await fetchWithAuth("/api/palettes");
-      const list = await res.json();
-      paletteSelect.innerHTML = "";
+ function loadPalettes(selectId = null) {
+  const list = JSON.parse(localStorage.getItem("cc_local_palettes") || "[]");
 
-      if (!Array.isArray(list) || !list.length) {
-        const opt = document.createElement("option");
-        opt.textContent = "— No palettes yet —";
-        opt.value = "";
-        paletteSelect.appendChild(opt);
-        savedColors.innerHTML = "";
-        return;
-      }
+  paletteSelect.innerHTML = "";
 
-      list.forEach((p) => {
-        const opt = document.createElement("option");
-        opt.value = p.id;
-        opt.textContent = p.name;
-        paletteSelect.appendChild(opt);
-      });
-
-      // Auto-select a palette if needed
-      if (selectId) paletteSelect.value = selectId;
-      else if (!paletteSelect.value) paletteSelect.value = list[list.length - 1].id;
-
-      await loadPaletteColors();
-    } catch (e) {
-      showAlert("Error loading palettes", false);
-    }
+  if (!list.length) {
+    const opt = document.createElement("option");
+    opt.textContent = "— No palettes yet —";
+    opt.value = "";
+    paletteSelect.appendChild(opt);
+    savedColors.innerHTML = "";
+    return;
   }
 
-  // 💾 Create or select palette
-  createPaletteBtn?.addEventListener("click", async () => {
-    // 🚫 Block saving if not logged in
-    const currentUser = localStorage.getItem("cc_logged_user");
-    if (!currentUser) {
-      showAlert("You must be signed in to save palettes 🍓", false);
-      return;
-    }
-    let name = sanitizeInput(paletteInput.value.trim());
-
-    if (!name) return showAlert("Enter a palette name 💕", false);
-
-    try {
-      const res = await fetchWithAuth("/api/palettes", {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      });
-      const data = await res.json();
-
-      if (!res.ok && !data.id)
-        return showAlert(data.error || "Error saving palette", false);
-
-      showAlert("Palette saved! 🎉", true);
-      paletteInput.value = "";
-      await loadPalettes(data.id);
-    } catch {
-      showAlert("Network error 💔", false);
-    }
+  list.forEach((p) => {
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.name;
+    paletteSelect.appendChild(opt);
   });
+
+  if (selectId) paletteSelect.value = selectId;
+  else if (!paletteSelect.value) paletteSelect.value = list[list.length - 1].id;
+
+  loadPaletteColors();
+}
+
+  // 💾 Create or select palette
+  createPaletteBtn?.addEventListener("click", () => {
+  let name = sanitizeInput(paletteInput.value.trim());
+  if (!name) return showAlert("Enter a palette name 💕", false);
+
+  const list = JSON.parse(localStorage.getItem("cc_local_palettes") || "[]");
+
+  const newPalette = {
+    id: Date.now(),
+    name,
+    colors: []
+  };
+
+  list.push(newPalette);
+  localStorage.setItem("cc_local_palettes", JSON.stringify(list));
+
+  showAlert("Palette saved locally! 🎉", true);
+  paletteInput.value = "";
+  loadPalettes(newPalette.id);
+});
 
   // 🗑️ Delete palette
-  deletePaletteBtn?.addEventListener("click", async () => {
-    const currentUser = localStorage.getItem("cc_logged_user");
-    if (!currentUser) {
-      showAlert("You must be signed in to delete palettes 🍓", false);
-      return;
-    }
-    const id = parseInt(paletteSelect.value || "0");
-    if (!id) return showAlert("No palette selected", false);
-    if (!confirm("Delete this palette?")) return;
-    const res = await fetchWithAuth(`/api/palettes/${id}`, { method: "DELETE" });
-    if (!res.ok) return showAlert("Delete failed", false);
-    showAlert("Palette deleted 🗑️", true);
-    await loadPalettes(false); // ✅ reload list after delete
-  });
+  deletePaletteBtn?.addEventListener("click", () => {
+  const id = parseInt(paletteSelect.value || "0");
+  if (!id) return showAlert("No palette selected", false);
+  if (!confirm("Delete this palette?")) return;
+
+  const list = JSON.parse(localStorage.getItem("cc_local_palettes") || "[]")
+    .filter((p) => p.id !== id);
+
+  localStorage.setItem("cc_local_palettes", JSON.stringify(list));
+
+  showAlert("Palette deleted 🗑️", true);
+  loadPalettes();
+});
 
   // 🎨 Load palette colors
   async function loadPaletteColors() {
     const id = parseInt(paletteSelect.value || "0");
     savedColors.innerHTML = "";
     if (!id) return;
-    const res = await fetchWithAuth("/api/palettes");
-    const list = await res.json();
+    const list = JSON.parse(localStorage.getItem("cc_local_palettes") || "[]");
     const pal = list.find((p) => p.id === id);
+
     if (!pal || !pal.colors) return;
 
     for (const c of pal.colors) {
@@ -288,11 +299,7 @@ async function initPalettePage() {
   const btn = document.createElement("button");
   btn.textContent = "❌ Delete";
   btn.addEventListener("click", async () => {
-    const currentUser = localStorage.getItem("cc_logged_user");
-    if (!currentUser) {
-      showAlert("You must be signed in to edit colors 🍓", false);
-      return;
-    }
+    
     await fetchWithAuth(`/api/palettes/${id}/colors/${c.id}`, {
       method: "DELETE",
     });
@@ -576,7 +583,12 @@ document.addEventListener("input", (e) => {
   if (e.target.type !== "text") return;
 
   // Don’t sanitize login fields live (handled on submit)
-  if (e.target.id === "authUsername" || e.target.id === "authPassword") return;
+  if (
+    e.target.id === "authUsername" ||
+    e.target.id === "authPassword" ||
+    e.target.id === "progressLinkBox"
+  ) return;
+
 
   // Do NOT remove spaces. Only remove dangerous characters.
   const original = e.target.value;
@@ -589,4 +601,28 @@ document.addEventListener("input", (e) => {
   if (cleaned !== original) {
     e.target.value = cleaned;
   }
+});
+document.addEventListener("DOMContentLoaded", () => {
+  const saveBtn = document.getElementById("saveProgressLinkBtn");
+  const linkBox = document.getElementById("progressLinkBox");
+
+  if (!saveBtn || !linkBox) return;
+
+  saveBtn.addEventListener("click", () => {
+    const progress = getAllLocalProgress();
+
+    const code = btoa(unescape(encodeURIComponent(JSON.stringify(progress))));
+    const link = window.location.origin + window.location.pathname + "#progress=" + code;
+
+    linkBox.style.display = "block";
+    linkBox.value = link;
+    linkBox.focus();
+    linkBox.select();
+
+    navigator.clipboard?.writeText(link);
+
+    alert("Progress link created and copied! 💾");
+  });
+
+  
 });
