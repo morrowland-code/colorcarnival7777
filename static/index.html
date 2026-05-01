@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Color Carnival 🎪</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js?v=5" defer></script>
+  <script src="/static/app.js?v=11" defer></script>
   <style>
 /* ✅ Fix scrolling on mobile */
 body {
@@ -113,18 +113,9 @@ h1, h2, h3 {
         <option value="strawberry">Strawberry</option>
         <option value="lavender">Lavender</option>
         <option value="peach">Peach</option>
-        <option value="goth">Goth Clown</option>
+        <option value="goth">Green</option>
       </select>
-   <div id="loginArea" style="display:flex;align-items:center;gap:8px;">
-  <span id="userStatus" style="font-size:13px;font-weight:600;color:#ff4f9a;"></span>
-  <button
-    id="loginStatusButton"
-    class="btn-ghost"
-    onclick="openAuthPopup()"
-  >
-    Sign In / Out
-  </button>
-</div>
+  
     </div>
     <!-- 🎠 Strawbebby Login/Register Popup -->
   </nav>
@@ -185,6 +176,17 @@ h1, h2, h3 {
     <h1>🎪 Welcome to <strong>Color Carnival</strong>🎪</h1>
     <p>Photorealistic coloring guide with palette matching, grid overlays, and pressure hints.</p>
 
+    <button id="saveProgressLinkBtn" class="btn-ghost">
+      💾 Save Progress Link
+    </button>
+
+    <input
+      id="progressLinkBox"
+      type="text"
+      readonly
+      style="display:none;width:100%;margin-top:10px;"
+    >
+
       <div class="auth-panel">
         <h3>Walkthrough 📘</h3>
         <ol style="font-size:14px; padding-left:18px;">
@@ -218,42 +220,10 @@ h1, h2, h3 {
     <a href="/terms" style="color:#ff5fa5;text-decoration:none;">Terms of Service</a>
   </p>
 </footer>
-<img id="strawbebby" src="/static/strawbebby.png" alt="Strawbebby" onclick="randomBebbyTip()">
+
 <!-- 🎠 Strawbebby Login/Register Popup (moved outside nav) -->
-<div id="authPopup" class="auth-popup">
-  <div class="auth-box">
-    <h2 id="authTitle">🎀 Sign In</h2>
 
-    <input id="authUsername" type="text" placeholder="Username" />
-    <input id="authPassword" type="password" placeholder="Password" />
-
-    <button id="authAction">Sign In</button>
-
-    <p class="auth-toggle">
-      <span id="toggleAuthMode">No account? Register here!</span>
-    </p>
-
-    <button id="authLogout" style="display:none;">Log Out</button>
-  </div>
-</div>
 <script src="/static/strawbebby.js"></script>
-<script>
-  // ✅ Ensure popup always opens on mobile + desktop
-  document.addEventListener("DOMContentLoaded", () => {
-    const loginBtn = document.getElementById("loginStatusButton");
-    if (!loginBtn) return;
 
-    // Remove any old handlers first
-    loginBtn.onclick = null;
-
-    // Attach both click and touchend for safety
-    ["click", "touchend"].forEach(evt =>
-      loginBtn.addEventListener(evt, (e) => {
-        e.preventDefault();
-        openAuthPopup();
-      })
-    );
-  });
-</script>
 </body>
 </html>
