@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🧩 Grid Overlay | Color Carnival</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js?v=12" defer></script>
+  <script src="/static/app.js?v=13" defer></script>
 
   <style>
     body {
@@ -459,24 +459,20 @@
         let index = 0;
         const total = data.matched.length;
 
-        function renderNext() {
-          if (index >= total) {
-            spinner.style.display = "none";
-            progressBar.style.width = "100%";
-            progressPercent.textContent = "100%";
-            showAlert("Done! 🎉 All squares processed.", true);
-            return;
-          }
-
-          if (index === 0) {
-            spinner.style.display = "none";
-            progressWrap.style.display = "block";
-          }
-
+      function renderNext() {
+        if (index === 0) {
+          spinner.style.display = "none";
+          progressWrap.style.display = "block";
+        }
+      
+        const batchSize = 25;
+        const end = Math.min(index + batchSize, total);
+      
+        for (; index < end; index++) {
           const cell = data.matched[index];
           const card = document.createElement("div");
           card.className = "result-card";
-
+      
           card.innerHTML = `
             <div class="cell-swatch" style="background:${cell.cell};"></div>
             <div>
@@ -486,9 +482,9 @@
               ${cell.mix_colors ? `<div class="mix-group"><b>🎨 Mix Colors:</b></div>` : ""}
             </div>
           `;
-
+      
           const matchGroup = card.querySelector(".match-group");
-
+      
           cell.matches.forEach(m => {
             const chip = document.createElement("div");
             chip.className = "match-chip";
@@ -498,10 +494,9 @@
             `;
             matchGroup.appendChild(chip);
           });
-
+      
           if (cell.mix_colors) {
             const mixGroup = card.querySelector(".mix-group");
-
             cell.mix_colors.forEach(m => {
               const chip = document.createElement("div");
               chip.className = "match-chip";
@@ -513,15 +508,23 @@
             });
           }
 
-          gridResultsList.appendChild(card);
+    gridResultsList.appendChild(card);
+  }
 
-          index++;
-          const percent = Math.floor((index / total) * 100);
-          progressPercent.textContent = `${percent}%`;
-          progressBar.style.width = `${percent}%`;
+  const percent = Math.floor((index / total) * 100);
+  progressPercent.textContent = `${percent}%`;
+  progressBar.style.width = `${percent}%`;
 
-          requestAnimationFrame(renderNext);
-        }
+  if (index < total) {
+    setTimeout(renderNext, 0);
+  } else {
+    spinner.style.display = "none";
+    progressBar.style.width = "100%";
+    progressPercent.textContent = "100%";
+    showAlert("Done! 🎉 All squares processed.", true);
+  }
+}
+
 
         requestAnimationFrame(renderNext);
       } catch (err) {
