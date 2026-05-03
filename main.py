@@ -446,6 +446,73 @@ def extract_match_mix():
 
     return jsonify({"matched": results, "count": len(results)})
 
+@app.route("/api/grid/extract_match_mix_chunk", methods=["POST"])
+def extract_match_mix_chunk():
+    body = request.get_json()
+
+    img_b64 = body.get("image")
+    grid_size = int(body.get("grid_size", 40))
+    palette = body.get("palette", [])
+    start = int(body.get("start", 0))
+    limit = int(body.get("limit", 5))
+
+    if not img_b64 or not palette:
+        return jsonify({"error": "Missing image or palette"}), 400
+
+    img_bytes = base64.b64decode(img_b64.split(",")[1])
+    img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+    w, h = img.size
+
+    cells = []
+    for y in range(0, h, grid_size):
+        for x in range(0, w, grid_size):
+            cells.append((x, y))
+
+    total = len(cells)
+    selected = cells[start:start + limit]
+
+    def hex_to_rgb(hexcode):
+        hexcode = hexcode.lstrip("#")
+        return tuple(int(hexcode[i:i+2], 16) for i in (0, 2, 4))
+
+    def color_dist(c1, c2):
+        return sum((a - b) ** 2 for a, b in zip(c1, c2)) ** 0.5
+
+    results = []
+
+    for x, y in selected:
+        cx = min(x + grid_size // 2, w - 1)
+        cy = min(y + grid_size // 2, h - 1)
+
+        r, g, b = img.getpixel((cx, cy))
+        cell_hex = f"#{r:02x}{g:02x}{b:02x}"
+
+        ranked = sorted(
+            palette,
+            key=lambda p: color_dist((r, g, b), hex_to_rgb(p["hex"]))
+        )[:5]
+
+        results.append({
+            "cell": cell_hex,
+            "matches": [{"name": p.get("name", "Unnamed"), "hex": p["hex"]} for p in ranked],
+            "mix_colors": [
+                {
+                    "mix_with": p.get("name", "Unnamed"),
+                    "ratio": round(random.uniform(10, 30), 1),
+                    "hex": p["hex"]
+                }
+                for p in ranked[:5]
+            ]
+        })
+
+    return jsonify({
+        "matched": results,
+        "start": start,
+        "next_start": start + len(results),
+        "total": total,
+        "done": start + len(results) >= total
+    })
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
