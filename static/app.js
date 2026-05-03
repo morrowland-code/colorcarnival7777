@@ -31,16 +31,23 @@ restoreProgressFromLinkNow();
 
 
 function getAllLocalProgress() {
+  const allowedKeys = [
+    "cc_local_palettes",
+    "cc_theme",
+    "cc_grid_size",
+    "cc_grid_results"
+  ];
+
   const data = {};
 
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    data[key] = localStorage.getItem(key);
-
-  }
+  allowedKeys.forEach((key) => {
+    const value = localStorage.getItem(key);
+    if (value !== null) data[key] = value;
+  });
 
   return data;
 }
+
 
 function restoreAllLocalProgress(data) {
   Object.keys(data || {}).forEach((key) => {
