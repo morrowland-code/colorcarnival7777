@@ -487,10 +487,22 @@ def extract_match_mix_chunk():
         r, g, b = img.getpixel((cx, cy))
         cell_hex = f"#{r:02x}{g:02x}{b:02x}"
 
+        safe_palette = [
+            p for p in palette
+            if isinstance(p, dict)
+            and isinstance(p.get("hex"), str)
+            and p.get("hex", "").startswith("#")
+            and len(p.get("hex", "")) == 7
+        ]
+
         ranked = sorted(
-            palette,
+            safe_palette,
             key=lambda p: color_dist((r, g, b), hex_to_rgb(p["hex"]))
         )[:5]
+
+        if not ranked:
+            continue
+
 
         results.append({
             "cell": cell_hex,
