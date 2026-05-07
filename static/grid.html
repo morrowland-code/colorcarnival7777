@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🧩 Grid Overlay | Color Carnival</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js?v=17" defer></script>
+  <script src="/static/app.js?v=22" defer></script>
 
   <style>
     body {
@@ -201,9 +201,18 @@
       </div>
     </div>
 
-    <p id="chunkStatus" style="font-size:13px;color:#ff2f8f;font-weight:700;">
-      Waiting to load squares...
-    </p>
+    <div id="chunkProgressWrap" style="display:none;margin-top:12px;">
+      <p id="chunkStatus" style="font-size:13px;color:#ff2f8f;font-weight:700;">
+        Loading squares... 0%
+      </p>
+
+      <div style="width:100%;height:16px;border-radius:999px;background:rgba(0,0,0,0.12);overflow:hidden;">
+        <div
+          id="chunkProgressBar"
+          style="height:100%;width:0%;background:linear-gradient(90deg,#ff7bb0,#ffb6e1);border-radius:999px;transition:width 0.25s ease;"
+        ></div>
+      </div>
+    </div>
 
     <div class="grid-results" id="gridResultsList"></div>
   </main>
@@ -423,7 +432,11 @@
   const progressBar = document.getElementById("progressBar");
   const progressPercent = document.getElementById("progressPercent");
   const spinner = document.getElementById("loadingSpinner");
+  const chunkProgressWrap = document.getElementById("chunkProgressWrap");
+  const chunkProgressBar = document.getElementById("chunkProgressBar");
   const chunkStatus = document.getElementById("chunkStatus");
+  
+  
 
   const palData = getPalettes();
   const chosenPal = palData.find((p) => Number(p.id) === Number(paletteId));
@@ -434,15 +447,26 @@
 
   spinner.style.display = "none";
   progressWrap.style.display = "block";
+  progressWrap.style.visibility = "visible";
+  progressWrap.style.opacity = "1";
+
   gridResultsList.innerHTML = "";
   progressBar.style.width = "0%";
   progressPercent.textContent = "0%";
-  chunkStatus.textContent = "Starting...";
+
+  chunkProgressWrap.style.display = "block";
+  chunkProgressBar.style.width = "0%";
+
+  chunkStatus.style.display = "block";
+  chunkStatus.textContent = "Starting... 0%";
 
   let start = 0;
-  const limit = 5;
+  const limit = 25;
   let allResults = [];
   let total = 0;
+  let loadStartTime = Date.now();
+
+
 
   async function loadChunk() {
     const res = await fetch("/api/grid/extract_match_mix_chunk", {
@@ -479,7 +503,7 @@
 
       const matchGroup = card.querySelector(".match-group");
 
-      cell.matches.slice(0, 3).forEach(m => {
+      cell.matches.slice(0, 5).forEach(m => {
         const chip = document.createElement("div");
         chip.className = "match-chip";
         chip.innerHTML = `
@@ -495,9 +519,26 @@
     start = data.next_start;
 
     const percent = Math.floor((start / total) * 100);
-    progressPercent.textContent = percent + "%";
+
     progressBar.style.width = percent + "%";
-    chunkStatus.textContent = `Loaded ${start} of ${total} squares...`;
+    progressPercent.textContent = percent + "%";
+
+    chunkProgressBar.style.width = percent + "%";
+
+    const elapsedSeconds = (Date.now() - loadStartTime) / 1000;
+
+    const squaresPerSecond =
+      start / Math.max(elapsedSeconds, 1);
+
+    const remainingSquares = total - start;
+
+    const secondsLeft = Math.ceil(
+      remainingSquares / Math.max(squaresPerSecond, 1)
+    );
+
+    chunkStatus.textContent =
+      `Loading squares... ${percent}% — ${start} of ${total} — about ${secondsLeft}s left`;
+
 
     localStorage.setItem(GRID_RESULTS_KEY, JSON.stringify({
       paletteId,
