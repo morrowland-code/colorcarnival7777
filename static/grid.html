@@ -1,12 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="en" data-theme="strawberry">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🧩 Grid Overlay | Color Carnival</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js?v=23" defer></script>
+  <script src="/static/app.js?v=25" defer></script>
 
   <style>
     body {
@@ -19,14 +19,22 @@
     }
 
     @keyframes rainbowFlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
     }
 
     canvas#gridCanvas {
       border-radius: 12px;
-      box-shadow: 0 0 15px rgba(255,150,200,.4);
+      box-shadow: 0 0 15px rgba(255, 150, 200, .4);
       margin-top: 16px;
       max-width: 100%;
     }
@@ -42,11 +50,16 @@
       font-weight: 600;
       z-index: 999;
       color: white;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
-    #alertBox.success { background: #ff69b4; }
-    #alertBox.error { background: #ff4d6d; }
+    #alertBox.success {
+      background: #ff69b4;
+    }
+
+    #alertBox.error {
+      background: #ff4d6d;
+    }
 
     .grid-results {
       margin-top: 20px;
@@ -56,9 +69,9 @@
       max-height: 400px;
       overflow-y: auto;
       padding: 10px;
-      background: rgba(255,255,255,0.8);
+      background: rgba(255, 255, 255, 0.8);
       border-radius: 15px;
-      box-shadow: 0 4px 10px rgba(255,100,150,0.25);
+      box-shadow: 0 4px 10px rgba(255, 100, 150, 0.25);
     }
 
     .result-card {
@@ -68,11 +81,13 @@
       display: flex;
       gap: 10px;
       align-items: center;
-      box-shadow: 0 4px 8px rgba(255,100,150,0.2);
+      box-shadow: 0 4px 8px rgba(255, 100, 150, 0.2);
       transition: transform 0.2s ease;
     }
 
-    .result-card:hover { transform: scale(1.02); }
+    .result-card:hover {
+      transform: scale(1.02);
+    }
 
     .cell-swatch {
       width: 40px;
@@ -98,7 +113,7 @@
       align-items: center;
       gap: 5px;
       font-size: 11px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
 
     .match-swatch {
@@ -109,8 +124,13 @@
     }
 
     @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
     }
   </style>
 </head>
@@ -143,12 +163,7 @@
       💾 Save Progress Link
     </button>
 
-    <input
-      id="progressLinkBox"
-      type="text"
-      readonly
-      style="display:none;width:100%;margin-top:10px;"
-    >
+    <input id="progressLinkBox" type="text" readonly style="display:none;width:100%;margin-top:10px;">
 
     <h3>1️⃣ Upload your reference image</h3>
     <input type="file" id="gridFile" accept="image/*">
@@ -187,7 +202,9 @@
     </div>
 
     <div id="loadingSpinner" style="display:none; text-align:center; margin-top:20px;">
-      <div style="width:50px;height:50px;border:6px solid rgba(255,255,255,0.4);border-top-color:#ff69b4;border-radius:50%;margin:0 auto 10px;animation: spin 1s linear infinite;"></div>
+      <div
+        style="width:50px;height:50px;border:6px solid rgba(255,255,255,0.4);border-top-color:#ff69b4;border-radius:50%;margin:0 auto 10px;animation: spin 1s linear infinite;">
+      </div>
       <p style="font-size:13px;color:#ff69b4;">Loading squares...</p>
     </div>
 
@@ -197,7 +214,9 @@
       </p>
 
       <div style="width:100%;height:14px;border-radius:999px;background:rgba(0,0,0,0.1);overflow:hidden;">
-        <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#ff7bb0,#ffb6e1);border-radius:inherit;transition:width 0.2s ease;"></div>
+        <div id="progressBar"
+          style="height:100%;width:0%;background:linear-gradient(90deg,#ff7bb0,#ffb6e1);border-radius:inherit;transition:width 0.2s ease;">
+        </div>
       </div>
     </div>
 
@@ -207,10 +226,9 @@
       </p>
 
       <div style="width:100%;height:16px;border-radius:999px;background:rgba(0,0,0,0.12);overflow:hidden;">
-        <div
-          id="chunkProgressBar"
-          style="height:100%;width:0%;background:linear-gradient(90deg,#ff7bb0,#ffb6e1);border-radius:999px;transition:width 0.25s ease;"
-        ></div>
+        <div id="chunkProgressBar"
+          style="height:100%;width:0%;background:linear-gradient(90deg,#ff7bb0,#ffb6e1);border-radius:999px;transition:width 0.25s ease;">
+        </div>
       </div>
     </div>
 
@@ -421,79 +439,90 @@
       w.close();
     });
 
-  document.getElementById("matchWithPalette").addEventListener("click", async () => {
-  const paletteId = parseInt(paletteDropdown.value || "0", 10);
+    document.getElementById("matchWithPalette").addEventListener("click", async () => {
+      const paletteId = parseInt(paletteDropdown.value || "0", 10);
 
-  if (!paletteId) return showAlert("Select a palette first 🎨", false);
-  if (!originalImageDataURL) return showAlert("Upload and draw your grid first 🧩", false);
+      if (!paletteId) return showAlert("Select a palette first 🎨", false);
+      if (!originalImageDataURL) return showAlert("Upload and draw your grid first 🧩", false);
 
-  const gridSize = parseInt(gridSizeInput.value || "20", 10);
-  const progressWrap = document.getElementById("progressWrap");
-  const progressBar = document.getElementById("progressBar");
-  const progressPercent = document.getElementById("progressPercent");
-  const spinner = document.getElementById("loadingSpinner");
-  const chunkProgressWrap = document.getElementById("chunkProgressWrap");
-  const chunkProgressBar = document.getElementById("chunkProgressBar");
-  const chunkStatus = document.getElementById("chunkStatus");
-  
-  
-
-  const palData = getPalettes();
-  const chosenPal = palData.find((p) => Number(p.id) === Number(paletteId));
-
-  if (!chosenPal || !chosenPal.colors || !chosenPal.colors.length) {
-    return showAlert("No colors in selected palette", false);
-  }
-
-  spinner.style.display = "none";
-  progressWrap.style.display = "block";
-  progressWrap.style.visibility = "visible";
-  progressWrap.style.opacity = "1";
-
-  gridResultsList.innerHTML = "";
-  progressBar.style.width = "0%";
-  progressPercent.textContent = "0%";
-
-  chunkProgressWrap.style.display = "block";
-  chunkProgressBar.style.width = "0%";
-
-  chunkStatus.style.display = "block";
-  chunkStatus.textContent = "Starting... 0%";
-
-  let start = 0;
-  const limit = 25;
-  let allResults = [];
-  let total = 0;
-  let loadStartTime = Date.now();
+      const gridSize = parseInt(gridSizeInput.value || "20", 10);
+      const progressWrap = document.getElementById("progressWrap");
+      const progressBar = document.getElementById("progressBar");
+      const progressPercent = document.getElementById("progressPercent");
+      const spinner = document.getElementById("loadingSpinner");
+      const chunkProgressWrap = document.getElementById("chunkProgressWrap");
+      const chunkProgressBar = document.getElementById("chunkProgressBar");
+      const chunkStatus = document.getElementById("chunkStatus");
 
 
 
-  async function loadChunk() {
-    const res = await fetch("/api/grid/extract_match_mix_chunk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image: originalImageDataURL,
-        grid_size: gridSize,
-        palette: chosenPal.colors,
-        start,
-        limit
-      }),
-    });
+      const palData = getPalettes();
+      const chosenPal = palData.find((p) => Number(p.id) === Number(paletteId));
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Error matching colors");
+      if (!chosenPal || !chosenPal.colors || !chosenPal.colors.length) {
+        return showAlert("No colors in selected palette", false);
+      }
 
-    total = data.total;
-    allResults = allResults.concat(data.matched);
+      spinner.style.display = "none";
+      progressWrap.style.display = "block";
+      progressWrap.style.visibility = "visible";
+      progressWrap.style.opacity = "1";
 
-    data.matched.forEach((cell, i) => {
-      const squareNumber = start + i + 1;
+      gridResultsList.innerHTML = "";
+      progressBar.style.width = "0%";
+      progressPercent.textContent = "0%";
 
-      const card = document.createElement("div");
-      card.className = "result-card";
+      chunkProgressWrap.style.display = "block";
+      chunkProgressBar.style.width = "0%";
 
-      card.innerHTML = `
+      chunkStatus.style.display = "block";
+      chunkStatus.textContent = "Starting... 0%";
+
+      const savedProgress =
+        JSON.parse(localStorage.getItem(GRID_RESULTS_KEY) || "null");
+
+      let start = savedProgress?.unfinished
+        ? savedProgress.nextStart || 0
+        : 0;
+
+      const limit = 25;
+
+      let allResults = [];
+
+
+      let total = savedProgress?.total || 0;
+
+      let loadStartTime = Date.now();
+
+
+
+
+      async function loadChunk() {
+        const res = await fetch("/api/grid/extract_match_mix_chunk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: originalImageDataURL,
+            grid_size: gridSize,
+            palette: chosenPal.colors,
+            start,
+            limit
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error matching colors");
+
+        total = data.total;
+        allResults = allResults.concat(data.matched);
+
+        data.matched.forEach((cell, i) => {
+          const squareNumber = start + i + 1;
+
+          const card = document.createElement("div");
+          card.className = "result-card";
+
+          card.innerHTML = `
         <div class="cell-swatch" style="background:${cell.cell};"></div>
         <div>
           <p><b>Square ${squareNumber}</b></p>
@@ -501,70 +530,75 @@
         </div>
       `;
 
-      const matchGroup = card.querySelector(".match-group");
+          const matchGroup = card.querySelector(".match-group");
 
-      cell.matches.slice(0, 5).forEach(m => {
-        const chip = document.createElement("div");
-        chip.className = "match-chip";
-        chip.innerHTML = `
+          cell.matches.slice(0, 5).forEach(m => {
+            const chip = document.createElement("div");
+            chip.className = "match-chip";
+            chip.innerHTML = `
           <div class="match-swatch" style="background:${m.hex};"></div>
           <span>${m.name || ""}</span>
         `;
-        matchGroup.appendChild(chip);
-      });
+            matchGroup.appendChild(chip);
+          });
 
-      gridResultsList.appendChild(card);
+          gridResultsList.appendChild(card);
+        });
+
+        start = data.next_start;
+
+        const percent = Math.floor((start / total) * 100);
+
+        progressBar.style.width = percent + "%";
+        progressPercent.textContent = percent + "%";
+
+        chunkProgressBar.style.width = percent + "%";
+
+        const elapsedSeconds = (Date.now() - loadStartTime) / 1000;
+
+        const squaresPerSecond =
+          start / Math.max(elapsedSeconds, 1);
+
+        const remainingSquares = total - start;
+
+        const secondsLeft = Math.ceil(
+          remainingSquares / Math.max(squaresPerSecond, 1)
+        );
+
+        chunkStatus.textContent =
+          `Loading squares... ${percent}% — ${start} of ${total} — about ${secondsLeft}s left`;
+
+
+        localStorage.setItem(GRID_RESULTS_KEY, JSON.stringify({
+          paletteId,
+          paletteName: chosenPal.name,
+          nextStart: start,
+          total: total,
+          unfinished: !data.done
+        }));
+
+
+
+        if (!data.done) {
+          setTimeout(loadChunk, 20);
+        } else {
+          progressPercent.textContent = "100%";
+          progressBar.style.width = "100%";
+          chunkStatus.textContent = `Done! Loaded ${total} squares 🎉`;
+          showAlert("Done! 🎉", true);
+        }
+      }
+
+      try {
+        await loadChunk();
+      } catch (err) {
+        showAlert("Error: " + err.message, false);
+        chunkStatus.textContent = "Stopped because of an error.";
+      }
     });
-
-    start = data.next_start;
-
-    const percent = Math.floor((start / total) * 100);
-
-    progressBar.style.width = percent + "%";
-    progressPercent.textContent = percent + "%";
-
-    chunkProgressBar.style.width = percent + "%";
-
-    const elapsedSeconds = (Date.now() - loadStartTime) / 1000;
-
-    const squaresPerSecond =
-      start / Math.max(elapsedSeconds, 1);
-
-    const remainingSquares = total - start;
-
-    const secondsLeft = Math.ceil(
-      remainingSquares / Math.max(squaresPerSecond, 1)
-    );
-
-    chunkStatus.textContent =
-      `Loading squares... ${percent}% — ${start} of ${total} — about ${secondsLeft}s left`;
-
-
-    localStorage.setItem(GRID_RESULTS_KEY, JSON.stringify({
-      paletteId,
-      paletteName: chosenPal.name,
-      matched: allResults
-    }));
-
-    if (!data.done) {
-      setTimeout(loadChunk, 20);
-    } else {
-      progressPercent.textContent = "100%";
-      progressBar.style.width = "100%";
-      chunkStatus.textContent = `Done! Loaded ${total} squares 🎉`;
-      showAlert("Done! 🎉", true);
-    }
-  }
-
-  try {
-    await loadChunk();
-  } catch (err) {
-    showAlert("Error: " + err.message, false);
-    chunkStatus.textContent = "Stopped because of an error.";
-  }
-});
-</script>
+  </script>
 
   <script src="/static/strawbebby.js"></script>
 </body>
+
 </html>
