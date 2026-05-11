@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🧩 Grid Overlay | Color Carnival</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js?v=25" defer></script>
+  <script src="/static/app.js?v=26" defer></script>
 
   <style>
     body {
@@ -157,10 +157,13 @@
 
   <main class="card">
     <h1>🧩 Grid Overlay</h1>
-    <p>Upload your reference image, draw a grid on top, and generate color matches.</p>
+    <p>
+      Upload your reference image, draw a grid, and generate color matches.
+      Large grid results save locally on this device, so they stay after refreshing or closing the browser.
+    </p>
 
     <button id="saveProgressLinkBtn" class="btn-ghost">
-      💾 Save Progress Link
+      💾 Save Small Progress Link
     </button>
 
     <input id="progressLinkBox" type="text" readonly style="display:none;width:100%;margin-top:10px;">
@@ -186,8 +189,8 @@
 
     <h3>2️⃣ Analyze & Match Colors</h3>
     <p style="font-size:13px;">
-      This preview shows top 5 closest pencils for each grid cell.<br>
-      Also see mix color suggestions.
+      This loads your grid in chunks and saves results locally as it goes.<br>
+      Each square shows the top 5 closest pencils and top 5 calculated mix suggestions.
     </p>
 
     <div class="input-row">
@@ -250,6 +253,46 @@
     const GRID_IMAGE_KEY = "cc_grid_image";
     const GRID_SIZE_KEY = "cc_grid_size";
     const GRID_RESULTS_KEY = "cc_grid_results";
+
+    const GRID_DB_NAME = "ColorCarnivalDB";
+    const GRID_STORE_NAME = "gridResults";
+
+    function openGridDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(GRID_DB_NAME, 1);
+
+        request.onupgradeneeded = () => {
+          request.result.createObjectStore(GRID_STORE_NAME);
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function saveBigGridResults(data) {
+      const db = await openGridDB();
+
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(GRID_STORE_NAME, "readwrite");
+        tx.objectStore(GRID_STORE_NAME).put(data, "latest");
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function loadBigGridResults() {
+      const db = await openGridDB();
+
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(GRID_STORE_NAME, "readonly");
+        const request = tx.objectStore(GRID_STORE_NAME).get("latest");
+
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
 
     let originalImageDataURL = null;
 
@@ -381,10 +424,12 @@
       loadImageToCanvas(savedGridImage, parseInt(gridSizeInput.value || "20", 10));
     }
 
-    const savedResults = JSON.parse(localStorage.getItem(GRID_RESULTS_KEY) || "null");
-    if (savedResults) {
-      renderSavedResults(savedResults);
-    }
+    loadBigGridResults().then(savedResults => {
+      if (savedResults && savedResults.matched) {
+        renderSavedResults(savedResults);
+      }
+    });
+
 
     gridSizeInput.addEventListener("input", () => {
       localStorage.setItem(GRID_SIZE_KEY, gridSizeInput.value);
@@ -569,6 +614,15 @@
           `Loading squares... ${percent}% — ${start} of ${total} — about ${secondsLeft}s left`;
 
 
+        await saveBigGridResults({
+          paletteId,
+          paletteName: chosenPal.name,
+          matched: allResults,
+          nextStart: start,
+          total: total,
+          unfinished: !data.done
+        });
+
         localStorage.setItem(GRID_RESULTS_KEY, JSON.stringify({
           paletteId,
           paletteName: chosenPal.name,
@@ -576,6 +630,7 @@
           total: total,
           unfinished: !data.done
         }));
+
 
 
 
