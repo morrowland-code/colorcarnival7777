@@ -460,8 +460,8 @@ def extract_match_mix():
     cell_w = grid_size
     cell_h = grid_size
 
-    for y in range(0, h, cell_h):
-        for x in range(0, w, cell_w):
+    for y in range(0, h - cell_h, cell_h):
+        for x in range(0, w - cell_w, cell_w):
             cx = min(x + cell_w // 2, w - 1)
             cy = min(y + cell_h // 2, h - 1)
             r, g, b = img.getpixel((cx, cy))
@@ -508,8 +508,8 @@ def extract_match_mix_chunk():
     w, h = img.size
 
     cells = []
-    for y in range(0, h, grid_size):
-        for x in range(0, w, grid_size):
+    for y in range(0, h - grid_size, grid_size):
+        for x in range(0, w - grid_size, grid_size):
             cells.append((x, y))
 
     total = len(cells)
