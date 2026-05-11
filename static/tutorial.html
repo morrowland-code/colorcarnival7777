@@ -1,14 +1,22 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="strawberry">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📘 Tutorial | Color Carnival</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js?v=3" defer></script>
+  <script src="/static/app.js?v=26" defer></script>
 </head>
+
 <body>
-  <div class="bg-bubbles"><div></div><div></div><div></div><div></div><div></div></div>
+  <div class="bg-bubbles">
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+  </div>
   <canvas id="confettiCanvas"></canvas>
   <div id="alertBox"></div>
 
@@ -53,9 +61,12 @@
       <li>Upload the same reference image on the <b>Grid</b> page.</li>
       <li>Choose a grid size that roughly matches your printed grid.</li>
       <li>Draw the grid overlay digitally and optionally save grid data to the backend.</li>
-      <li>Select a palette and hit <b>Match colors</b> to preview top 5 pencil choices per square.</li>
-      <li>Premium unlock lets you see mix percentages for the top 5 colors.</li>
-      <li>Starting at the top left corner square and moving to the right along the x-axis is the order of the matches.</li>
+      <li>Select a palette and hit <b>Match colors</b> to preview the top 5 closest pencil colors per square.</li>
+      <li>Each square also shows the top 5 calculated mix suggestions based on your palette colors.</li>
+
+      <li>No login or premium unlock is needed. Progress saves locally in your browser.</li>
+      <li>Starting at the top left corner square and moving to the right along the x-axis is the order of the matches.
+      </li>
     </ul>
 
     <h3>Step 4: Adjust pressure</h3>
@@ -68,8 +79,9 @@
     <p style="margin-top:16px;font-size:13px;">
   </main>
 
+  
   <img id="strawbebby" src="/static/strawbebby.png" alt="Strawbebby" onclick="randomBebbyTip()">
-  <img id="strawbebby" src="/static/strawbebby.png" alt="Strawbebby" onclick="randomBebbyTip()">
-<script src="/static/strawbebby.js"></script>
+  <script src="/static/strawbebby.js"></script>
 </body>
+
 </html>
