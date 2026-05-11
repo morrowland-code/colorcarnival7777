@@ -384,6 +384,50 @@ def export_grid_csv():
 # ======================================================
 # ======================================================
 # 🧩 GRID EXTRACT + MATCH + MIX (with premium flag)
+
+
+def rgb_to_hex(rgb):
+    return "#{:02x}{:02x}{:02x}".format(*rgb)
+
+def mix_rgb(c1, c2, ratio):
+    return (
+        round(c1[0] * ratio + c2[0] * (1 - ratio)),
+        round(c1[1] * ratio + c2[1] * (1 - ratio)),
+        round(c1[2] * ratio + c2[2] * (1 - ratio)),
+    )
+
+def find_best_mixes(target_rgb, palette):
+    def hex_to_rgb(hexcode):
+        hexcode = hexcode.lstrip("#")
+        return tuple(int(hexcode[i:i+2], 16) for i in (0, 2, 4))
+
+    def color_dist(c1, c2):
+        return sum((a - b) ** 2 for a, b in zip(c1, c2)) ** 0.5
+
+    mixes = []
+
+    for i in range(len(palette)):
+        for j in range(i + 1, len(palette)):
+            p1 = palette[i]
+            p2 = palette[j]
+
+            c1 = hex_to_rgb(p1["hex"])
+            c2 = hex_to_rgb(p2["hex"])
+
+            for ratio in [0.25, 0.5, 0.75]:
+                mixed = mix_rgb(c1, c2, ratio)
+                distance = color_dist(target_rgb, mixed)
+
+                mixes.append({
+                    "mix_with": f'{p1.get("name", "Unnamed")} + {p2.get("name", "Unnamed")}',
+                    "ratio": f"{round(ratio * 100)}% / {round((1 - ratio) * 100)}%",
+                    "hex": rgb_to_hex(mixed),
+                    "distance": round(distance, 2)
+                })
+
+    mixes.sort(key=lambda x: x["distance"])
+    return mixes
+
 # ======================================================
 @app.route("/api/grid/extract_match_mix", methods=["POST"])
 def extract_match_mix():
@@ -507,14 +551,8 @@ def extract_match_mix_chunk():
         results.append({
             "cell": cell_hex,
             "matches": [{"name": p.get("name", "Unnamed"), "hex": p["hex"]} for p in ranked],
-            "mix_colors": [
-                {
-                    "mix_with": p.get("name", "Unnamed"),
-                    "ratio": round(random.uniform(10, 30), 1),
-                    "hex": p["hex"]
-                }
-                for p in ranked[:5]
-            ]
+            "mix_colors": find_best_mixes((r, g, b), safe_palette)[:5]
+
         })
 
     return jsonify({
