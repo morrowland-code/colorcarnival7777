@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🧩 Grid Overlay | Color Carnival</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js?v=26" defer></script>
+  <script src="/static/app.js?v=31" defer></script>
 
   <style>
     body {
@@ -202,6 +202,10 @@
 
     <div class="input-row">
       <button id="matchWithPalette">Match colors (preview)</button>
+      <button id="resetGridProgressBtn" class="btn-ghost">
+        🔄 Restart Grid From Square 1
+      </button>
+
     </div>
 
     <div id="loadingSpinner" style="display:none; text-align:center; margin-top:20px;">
@@ -372,37 +376,37 @@
         card.className = "result-card";
 
         card.innerHTML = `
-          <div class="cell-swatch" style="background:${cell.cell};"></div>
-          <div>
-            <p><b>Square ${index + 1}</b> (${cell.cell})</p>
-            <p style="font-size:11px;color:#ff7aa8;">Palette: ${saved.paletteName || "Saved Palette"}</p>
-            <div class="match-group"></div>
-            ${cell.mix_colors ? `<div class="mix-group"><b>🎨 Mix Colors:</b></div>` : ""}
-          </div>
-        `;
+      <div class="cell-swatch" style="background:${cell.cell};"></div>
+      <div>
+        <p><b>Square ${index + 1}</b> (${cell.cell})</p>
+        <p style="font-size:11px;color:#ff7aa8;">Palette: ${saved.paletteName || "Saved Palette"}</p>
+        <div class="match-group"></div>
+        ${cell.mix_colors ? `<div class="mix-group"><b>🎨 Mix Colors:</b></div>` : ""}
+      </div>
+    `;
 
         const matchGroup = card.querySelector(".match-group");
 
-        (cell.matches || []).forEach(m => {
+        (cell.matches || []).slice(0, 5).forEach(m => {
           const chip = document.createElement("div");
           chip.className = "match-chip";
           chip.innerHTML = `
-            <div class="match-swatch" style="background:${m.hex};"></div>
-            <span>${m.name || "Unnamed"}<br><small>${m.hex}</small></span>
-          `;
+        <div class="match-swatch" style="background:${m.hex};"></div>
+        <span>${m.name || "Unnamed"}<br><small>${m.hex}</small></span>
+      `;
           matchGroup.appendChild(chip);
         });
 
         if (cell.mix_colors) {
           const mixGroup = card.querySelector(".mix-group");
 
-          cell.mix_colors.forEach(m => {
+          cell.mix_colors.slice(0, 5).forEach(m => {
             const chip = document.createElement("div");
             chip.className = "match-chip";
             chip.innerHTML = `
-              <div class="match-swatch" style="background:${m.hex};"></div>
-              <span>${m.mix_with} (${m.ratio}%)</span>
-            `;
+          <div class="match-swatch" style="background:${m.hex};"></div>
+          <span>${m.mix_with} (${m.ratio})</span>
+        `;
             mixGroup.appendChild(chip);
           });
         }
@@ -427,8 +431,15 @@
     loadBigGridResults().then(savedResults => {
       if (savedResults && savedResults.matched) {
         renderSavedResults(savedResults);
+
+        if (savedResults.unfinished) {
+          setTimeout(() => {
+            document.getElementById("matchWithPalette").click();
+          }, 1000);
+        }
       }
     });
+
 
 
     gridSizeInput.addEventListener("input", () => {
@@ -523,8 +534,7 @@
       chunkStatus.style.display = "block";
       chunkStatus.textContent = "Starting... 0%";
 
-      const savedProgress =
-        JSON.parse(localStorage.getItem(GRID_RESULTS_KEY) || "null");
+      const savedProgress = await loadBigGridResults();
 
       let start = savedProgress?.unfinished
         ? savedProgress.nextStart || 0
@@ -532,8 +542,11 @@
 
       const limit = 25;
 
-      let allResults = [];
+      let allResults = savedProgress?.matched || [];
 
+      if (allResults.length) {
+        renderSavedResults(savedProgress);
+      }
 
       let total = savedProgress?.total || 0;
 
@@ -651,6 +664,22 @@
         chunkStatus.textContent = "Stopped because of an error.";
       }
     });
+
+    document.getElementById("resetGridProgressBtn").addEventListener("click", async () => {
+      localStorage.removeItem("cc_grid_results");
+
+      const deleteRequest = indexedDB.deleteDatabase("ColorCarnivalDB");
+
+      deleteRequest.onsuccess = () => {
+
+        showAlert("Grid progress reset. Now press Match colors again.", true);
+      };
+
+      deleteRequest.onerror = () => {
+        showAlert("Could not reset grid progress.", false);
+      };
+    });
+
   </script>
 
   <script src="/static/strawbebby.js"></script>
